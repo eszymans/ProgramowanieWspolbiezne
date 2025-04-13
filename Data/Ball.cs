@@ -41,10 +41,35 @@ namespace TP.ConcurrentProgramming.Data
 
     internal void Move(Vector delta)
     {
-      Position = new Vector(Position.x + delta.x, Position.y + delta.y);
-      RaiseNewPositionChangeNotification();
+            double newX = Position.x + delta.x;
+            double newY = Position.y + delta.y;
+
+            if (newX > 400 - 24) 
+            {
+                newX = 2 * (400 - 24) - newX; 
+                delta = new Vector(-delta.x, delta.y);
+            }
+            else if (newX < 0) 
+            {
+                newX = -newX;
+                delta = new Vector(-delta.x, delta.y); 
+            }
+
+            if (newY > 420 - 24) 
+            {
+                newY = 2 * (420 - 24) - newY; 
+                delta = new Vector(delta.x, -delta.y); 
+            }
+            else if (newY < 0) 
+            {
+                newY = -newY;
+                delta = new Vector(delta.x, -delta.y); 
+            }
+            Position = new Vector(newX, newY);
+            RaiseNewPositionChangeNotification();
+
     }
 
     #endregion private
-  }
+}
 }
