@@ -39,36 +39,26 @@ namespace TP.ConcurrentProgramming.Data
       NewPositionNotification?.Invoke(this, Position);
     }
 
-    internal void Move(Vector delta)
-    {
+        internal void Move(Vector delta)
+        {
             double newX = Position.x + delta.x;
             double newY = Position.y + delta.y;
 
-            if (newX > 400 - 24) 
+            if (newX > 400 - 28 || newX < 0)
             {
-                newX = 2 * (400 - 24) - newX; 
                 delta = new Vector(-delta.x, delta.y);
-            }
-            else if (newX < 0) 
-            {
-                newX = -newX;
-                delta = new Vector(-delta.x, delta.y); 
+                Velocity = new Vector(-Velocity.x, Velocity.y);
             }
 
-            if (newY > 420 - 24) 
+            if (newY > 420 - 28 || newY < 0)
             {
-                newY = 2 * (420 - 24) - newY; 
-                delta = new Vector(delta.x, -delta.y); 
+                delta = new Vector(delta.x, -delta.y);
+                Velocity = new Vector(Velocity.x, -Velocity.y);
             }
-            else if (newY < 0) 
-            {
-                newY = -newY;
-                delta = new Vector(delta.x, -delta.y); 
-            }
-            Position = new Vector(newX, newY);
+
+            Position = new Vector(Position.x + delta.x, Position.y + delta.y);
             RaiseNewPositionChangeNotification();
-
-    }
+        }
 
     #endregion private
 }

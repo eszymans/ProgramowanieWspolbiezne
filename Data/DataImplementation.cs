@@ -36,7 +36,8 @@ namespace TP.ConcurrentProgramming.Data
       for (int i = 0; i < numberOfBalls; i++)
       {
         Vector startingPosition = new(random.Next(100, 400 - 100), random.Next(100, 400 - 100));
-        Ball newBall = new(startingPosition, startingPosition);
+        Vector initialVelocity = new((random.NextDouble() - 0.5) * 50, (random.NextDouble() - 0.5) * 50);
+                Ball newBall = new(startingPosition, initialVelocity);
         upperLayerHandler(startingPosition, newBall);
         BallsList.Add(newBall);
       }
@@ -73,23 +74,34 @@ namespace TP.ConcurrentProgramming.Data
     #region private
 
     //private bool disposedValue;
-    private bool Disposed = false;
+        private bool Disposed = false;
+        private DateTime lastUpdateTime = DateTime.Now;
+        private readonly Timer MoveTimer;
+        private Random RandomGenerator = new();
+        private List<Ball> BallsList = [];
 
-    private readonly Timer MoveTimer;
-    private Random RandomGenerator = new();
-    private List<Ball> BallsList = [];
+        private void Move(object? state)
+        {
+            DateTime now = DateTime.Now;
+            double deltaTime = (now - lastUpdateTime).TotalSeconds; 
+            lastUpdateTime = now;
 
-    private void Move(object? x)
-    {
-      foreach (Ball item in BallsList)
-        item.Move(new Vector((RandomGenerator.NextDouble() - 0.5) * 10, (RandomGenerator.NextDouble() - 0.5) * 10));
-    }
+            foreach (Ball ball in BallsList)
+            {
+                Vector scaledDelta = new Vector(
+                    ball.Velocity.x * deltaTime,
+                    ball.Velocity.y * deltaTime
+                );
 
-    #endregion private
+                ball.Move(scaledDelta);
+            }
+        }
 
-    #region TestingInfrastructure
+        #endregion private
 
-    [Conditional("DEBUG")]
+        #region TestingInfrastructure
+
+        [Conditional("DEBUG")]
     internal void CheckBallsList(Action<IEnumerable<IBall>> returnBallsList)
     {
       returnBallsList(BallsList);
