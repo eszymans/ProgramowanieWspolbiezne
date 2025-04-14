@@ -1,0 +1,10 @@
+﻿<Window x:Class="TP.ConcurrentProgramming.PresentationView.BallCountWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Ile kulek?" Height="150" Width="300" WindowStartupLocation="CenterScreen">
+    <StackPanel Margin="20">
+        <TextBlock Text="Podaj liczbę kulek:" Margin="0,0,0,10"/>
+        <TextBox x:Name="BallCountTextBox" Height="25" />
+        <Button Content="Start" Width="60" HorizontalAlignment="Right" Margin="0,10,0,0" Click="Start_Click"/>
+    </StackPanel>
+</Window>
