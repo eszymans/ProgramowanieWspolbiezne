@@ -44,13 +44,13 @@ namespace TP.ConcurrentProgramming.Data
             double newX = Position.x + delta.x;
             double newY = Position.y + delta.y;
 
-            if (newX > 400 - 28 || newX < 0)
+            if (newX > 400 - 24 || newX < 0)
             {
                 delta = new Vector(-delta.x, delta.y);
                 Velocity = new Vector(-Velocity.x, Velocity.y);
             }
 
-            if (newY > 420 - 28 || newY < 0)
+            if (newY > 420 - 24 || newY < 0)
             {
                 delta = new Vector(delta.x, -delta.y);
                 Velocity = new Vector(Velocity.x, -Velocity.y);

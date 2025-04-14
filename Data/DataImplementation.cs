@@ -19,7 +19,7 @@ namespace TP.ConcurrentProgramming.Data
 
     public DataImplementation()
     {
-      MoveTimer = new Timer(Move, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(100));
+      MoveTimer = new Timer(Move, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(30));
     }
 
     #endregion ctor
@@ -37,7 +37,7 @@ namespace TP.ConcurrentProgramming.Data
       {
         Vector startingPosition = new(random.Next(100, 400 - 100), random.Next(100, 400 - 100));
         Vector initialVelocity = new((random.NextDouble() - 0.5) * 50, (random.NextDouble() - 0.5) * 50);
-                Ball newBall = new(startingPosition, initialVelocity);
+        Ball newBall = new(startingPosition, initialVelocity);
         upperLayerHandler(startingPosition, newBall);
         BallsList.Add(newBall);
       }
@@ -75,25 +75,16 @@ namespace TP.ConcurrentProgramming.Data
 
     //private bool disposedValue;
         private bool Disposed = false;
-        private DateTime lastUpdateTime = DateTime.Now;
         private readonly Timer MoveTimer;
         private Random RandomGenerator = new();
         private List<Ball> BallsList = [];
 
         private void Move(object? state)
         {
-            DateTime now = DateTime.Now;
-            double deltaTime = (now - lastUpdateTime).TotalSeconds; 
-            lastUpdateTime = now;
 
             foreach (Ball ball in BallsList)
             {
-                Vector scaledDelta = new Vector(
-                    ball.Velocity.x * deltaTime,
-                    ball.Velocity.y * deltaTime
-                );
-
-                ball.Move(scaledDelta);
+                ball.Move(new Vector((RandomGenerator.NextDouble() - 0.5) * 3, (RandomGenerator.NextDouble() - 0.5) * 3));
             }
         }
 

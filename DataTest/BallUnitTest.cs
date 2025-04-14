@@ -58,7 +58,7 @@ namespace TP.ConcurrentProgramming.Data.Test
             ball.Move(new Vector(-6.0, -6.0));
 
             Assert.AreEqual(363, curentPosition.x);
-            Assert.AreEqual(388, curentPosition.y);
+            Assert.AreEqual(381, curentPosition.y);
         }
     }
 }
