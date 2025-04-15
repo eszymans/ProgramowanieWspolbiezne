@@ -75,16 +75,25 @@ namespace TP.ConcurrentProgramming.Data
 
     //private bool disposedValue;
         private bool Disposed = false;
+        private DateTime lastUpdateTime = DateTime.Now;
+
         private readonly Timer MoveTimer;
         private Random RandomGenerator = new();
         private List<Ball> BallsList = [];
-
         private void Move(object? state)
         {
+            DateTime now = DateTime.Now;
+            double deltaTime = (now - lastUpdateTime).TotalSeconds;
+            lastUpdateTime = now;
 
             foreach (Ball ball in BallsList)
             {
-                ball.Move(new Vector((RandomGenerator.NextDouble() - 0.5) * 3, (RandomGenerator.NextDouble() - 0.5) * 3));
+                Vector scaledDelta = new Vector(
+                    ball.Velocity.x * deltaTime,
+                    ball.Velocity.y * deltaTime
+                );
+
+                ball.Move(scaledDelta);
             }
         }
 
