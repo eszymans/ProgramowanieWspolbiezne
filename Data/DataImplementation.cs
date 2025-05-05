@@ -95,6 +95,60 @@ namespace TP.ConcurrentProgramming.Data
 
                 ball.Move(scaledDelta);
             }
+
+            HandleBallCollisions();
+        }
+
+        private void HandleBallCollisions() 
+        {
+            for (int i = 0; i < BallsList.Count; i++) 
+            {
+                for (int j = i + 1; j < BallsList.Count; j++)
+                {
+                    Ball b1 = BallsList[i];
+                    Ball b2 = BallsList[j];
+
+                    Vector pos1 = b1.Position;
+                    Vector pos2 = b2.Position;
+
+                    double dx = pos2.x - pos1.x;
+                    double dy = pos2.y - pos1.y;
+                    double distance = Math.Sqrt(dx * dx + dy * dy);
+                    double minDistance = 2 * b1.Radius;
+
+                    if (distance < minDistance && distance > 0) 
+                    {
+                        double nx = dx / distance;
+                        double ny = dy / distance;
+
+                        double vx1 = b1.Velocity.x;
+                        double vy1 = b1.Velocity.y;
+                        double vx2 = b2.Velocity.x;
+                        double vy2 = b2.Velocity.y;
+
+                        double p = 2 * (vx1 * nx + vy1 * ny - vx2 * nx - vy2 * ny) /
+                                   (b1.Mass + b2.Mass);
+
+                        b1.Velocity = new Vector(
+                            vx1 - p * b2.Mass * nx,
+                            vy1 - p * b2.Mass * ny
+                        );
+
+                        b2.Velocity = new Vector(
+                            vx2 + p * b1.Mass * nx,
+                            vy2 + p * b1.Mass * ny
+                        );
+
+                        double overlap = minDistance - distance;
+                        Vector correction = new Vector(nx * overlap, ny * overlap);
+
+
+                        b1.Position = new Vector(b1.Position.x - correction.x, b1.Position.y - correction.y);
+                        b2.Position = new Vector(b2.Position.x + correction.x, b2.Position.y + correction.y);
+                    }
+
+                }
+            }
         }
 
         #endregion private
