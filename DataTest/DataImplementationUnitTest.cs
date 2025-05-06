@@ -42,7 +42,7 @@ namespace TP.ConcurrentProgramming.Data.Test
       Assert.IsNotNull(ballsList);
       newInstance.CheckNumberOfBalls(x => Assert.AreEqual<int>(0, x));
       Assert.ThrowsException<ObjectDisposedException>(() => newInstance.Dispose());
-      Assert.ThrowsException<ObjectDisposedException>(() => newInstance.Start(0, (position, ball) => { }));
+      Assert.ThrowsException<ObjectDisposedException>(() => newInstance.Start(0, (position,radius, ball) => { }));
     }
 
     [TestMethod]
@@ -54,7 +54,7 @@ namespace TP.ConcurrentProgramming.Data.Test
         int numberOfBalls2Create = 10;
         newInstance.Start(
           numberOfBalls2Create,
-          (startingPosition, ball) =>
+          (startingPosition, radius, ball) =>
           {
             numberOfCallbackInvoked++;
             Assert.IsTrue(startingPosition.x >= 0);

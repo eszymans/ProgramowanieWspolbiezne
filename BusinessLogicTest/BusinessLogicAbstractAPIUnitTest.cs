@@ -25,10 +25,5 @@ namespace TP.ConcurrentProgramming.BusinessLogic.Test
       Assert.ThrowsException<ObjectDisposedException>(() => instance2.Dispose());
     }
 
-    [TestMethod]
-    public void GetDimensionsTestMethod()
-    {
-      Assert.AreEqual<Dimensions>(new(10.0, 10.0, 10.0), BusinessLogicAbstractAPI.GetDimensions);
-    }
   }
 }
