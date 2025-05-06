@@ -11,75 +11,76 @@
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace TP.ConcurrentProgramming.Data
 {
-  internal class DataImplementation : DataAbstractAPI
-  {
-    #region ctor
-
-    public DataImplementation()
+    internal class DataImplementation : DataAbstractAPI
     {
-      MoveTimer = new Timer(Move, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(15));
-    }
+        #region ctor
 
-    #endregion ctor
-
-    #region DataAbstractAPI
-
-    public override async Task Start(int numberOfBalls, Action<IVector, Double, IBall> upperLayerHandler)
-    {
-      if (Disposed)
-        throw new ObjectDisposedException(nameof(DataImplementation));
-      if (upperLayerHandler == null)
-        throw new ArgumentNullException(nameof(upperLayerHandler));
-      await Task.Run(() =>
-      {
-          Random random = new Random();
-          for (int i = 0; i < numberOfBalls; i++)
-          {
-              Vector startingPosition = new(random.Next(100, 300), random.Next(100, 300));
-              Vector initialVelocity = new((random.NextDouble() - 0.5) * 75, (random.NextDouble() - 0.5) * 75);
-              double mass = random.NextDouble() * 10 + 10;
-              double radius = random.NextDouble() * 10 + 10;
-              Ball newBall = new(startingPosition, initialVelocity, radius, mass);
-              upperLayerHandler(startingPosition, radius, newBall);
-              BallsList.Add(newBall);
-          }
-      });
-    }
-
-    #endregion DataAbstractAPI
-
-    #region IDisposable
-
-    protected virtual void Dispose(bool disposing)
-    {
-      if (!Disposed)
-      {
-        if (disposing)
+        public DataImplementation()
         {
-          MoveTimer.Dispose();
-          BallsList.Clear();
+            MoveTimer = new Timer(Move, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(15));
         }
-        Disposed = true;
-      }
-      else
-        throw new ObjectDisposedException(nameof(DataImplementation));
-    }
 
-    public override void Dispose()
-    {
-      // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-      Dispose(disposing: true);
-      GC.SuppressFinalize(this);
-    }
+        #endregion ctor
 
-    #endregion IDisposable
+        #region DataAbstractAPI
 
-    #region private
+        public override async Task Start(int numberOfBalls, Action<IVector, Double, IBall> upperLayerHandler)
+        {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(DataImplementation));
+            if (upperLayerHandler == null)
+                throw new ArgumentNullException(nameof(upperLayerHandler));
 
-    //private bool disposedValue;
+            await Task.Run(() =>
+            {
+                Random random = new Random();
+                for (int i = 0; i < numberOfBalls; i++)
+                {
+                    Vector startingPosition = new(random.Next(100, 300), random.Next(100, 300));
+                    Vector initialVelocity = new((random.NextDouble() - 0.5) * 75, (random.NextDouble() - 0.5) * 75);
+                    double mass = random.NextDouble() * 10 + 10;
+                    double radius = random.NextDouble() * 10 + 10;
+                    Ball newBall = new(startingPosition, initialVelocity, radius, mass);
+                    upperLayerHandler(startingPosition, radius, newBall);
+                    BallsList.Add(newBall);
+                }
+            });
+        }
+
+        #endregion DataAbstractAPI
+
+        #region IDisposable
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!Disposed)
+            {
+                if (disposing)
+                {
+                    MoveTimer.Dispose();
+                    BallsList.Clear();
+                }
+                Disposed = true;
+            }
+            else
+                throw new ObjectDisposedException(nameof(DataImplementation));
+        }
+
+        public override void Dispose()
+        {
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+
+        #endregion IDisposable
+
+        #region private
+
         private bool Disposed = false;
         private DateTime lastUpdateTime = DateTime.Now;
 
@@ -87,6 +88,17 @@ namespace TP.ConcurrentProgramming.Data
         private Random RandomGenerator = new();
         private ConcurrentBag<Ball> BallsList = new();
         private readonly object lockObject = new();
+
+        private void MoveBall(Ball ball, double deltaTime)
+        {
+            Vector scaledDelta = new Vector(
+                ball.Velocity.x * deltaTime,
+                ball.Velocity.y * deltaTime
+            );
+
+            ball.Move(scaledDelta);
+        }
+
         private void Move(object? state)
         {
             lock (lockObject)
@@ -95,23 +107,17 @@ namespace TP.ConcurrentProgramming.Data
                 double deltaTime = (now - lastUpdateTime).TotalSeconds;
                 lastUpdateTime = now;
 
+                var moveTasks = BallsList.Select(ball => Task.Run(() => MoveBall(ball, deltaTime))).ToArray();
+
+                Task.WhenAll(moveTasks).Wait();
+
                 HandleBallCollisions();
-                foreach (Ball ball in BallsList)
-                {
-                    Vector scaledDelta = new Vector(
-                        ball.Velocity.x * deltaTime,
-                        ball.Velocity.y * deltaTime
-                    );
-
-                    ball.Move(scaledDelta);
-                }
-
             }
         }
 
         private void HandleBallCollisions()
         {
-            var balls = BallsList.ToArray(); // Snapshot do pracy równoległej
+            var balls = BallsList.ToArray();
 
             Parallel.For(0, balls.Length, i =>
             {
@@ -126,6 +132,7 @@ namespace TP.ConcurrentProgramming.Data
                     double dx = pos2.x - pos1.x;
                     double dy = pos2.y - pos1.y;
                     double distance = Math.Sqrt(dx * dx + dy * dy);
+
                     double minDistance = b1.Radius + b2.Radius;
 
                     if (distance < minDistance && distance > 0)
@@ -151,9 +158,9 @@ namespace TP.ConcurrentProgramming.Data
                         lock (b1) b1.Velocity = newV1;
                         lock (b2) b2.Velocity = newV2;
 
-                        // Korekcja pozycji — przesuwamy w przeciwnych kierunkach
                         double overlap = minDistance - distance;
                         double totalMass = b1.Mass + b2.Mass;
+
                         double correctionB1Factor = b2.Mass / totalMass;
                         double correctionB2Factor = b1.Mass / totalMass;
 
@@ -161,36 +168,33 @@ namespace TP.ConcurrentProgramming.Data
 
                         lock (b1) b1.Position = new Vector(pos1.x - correction.x * correctionB1Factor, pos1.y - correction.y * correctionB1Factor);
                         lock (b2) b2.Position = new Vector(pos2.x + correction.x * correctionB2Factor, pos2.y + correction.y * correctionB2Factor);
-
                     }
                 }
             });
         }
-
 
         #endregion private
 
         #region TestingInfrastructure
 
         [Conditional("DEBUG")]
-    internal void CheckBallsList(Action<IEnumerable<IBall>> returnBallsList)
-    {
-      returnBallsList(BallsList);
-    }
+        internal void CheckBallsList(Action<IEnumerable<IBall>> returnBallsList)
+        {
+            returnBallsList(BallsList);
+        }
 
-    [Conditional("DEBUG")]
-    internal void CheckNumberOfBalls(Action<int> returnNumberOfBalls)
-    {
-      returnNumberOfBalls(BallsList.Count);
-    }
+        [Conditional("DEBUG")]
+        internal void CheckNumberOfBalls(Action<int> returnNumberOfBalls)
+        {
+            returnNumberOfBalls(BallsList.Count);
+        }
 
-    [Conditional("DEBUG")]
-    internal void CheckObjectDisposed(Action<bool> returnInstanceDisposed)
-    {
-      returnInstanceDisposed(Disposed);
-    }
+        [Conditional("DEBUG")]
+        internal void CheckObjectDisposed(Action<bool> returnInstanceDisposed)
+        {
+            returnInstanceDisposed(Disposed);
+        }
 
-    #endregion TestingInfrastructure
-  }
+        #endregion TestingInfrastructure
+    }
 }
-

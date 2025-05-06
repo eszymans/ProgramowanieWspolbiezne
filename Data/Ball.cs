@@ -48,13 +48,13 @@ namespace TP.ConcurrentProgramming.Data
             double newX = Position.x + delta.x;
             double newY = Position.y + delta.y;
 
-            if (newX > 396 - Radius * 2 || newX < 0)
+            if (newX > 392 - Radius * 2 || newX < 0)
             {
                 delta = new Vector(-delta.x, delta.y);
                 Velocity = new Vector(-Velocity.x, Velocity.y);
             }
 
-            if (newY > 416 - Radius * 2 || newY < 0)
+            if (newY > 412 - Radius * 2 || newY < 0)
             {
                 delta = new Vector(delta.x, -delta.y);
                 Velocity = new Vector(Velocity.x, -Velocity.y);
