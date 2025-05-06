@@ -9,6 +9,7 @@
 //_____________________________________________________________________________________________________________________________________
 
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 
 namespace TP.ConcurrentProgramming.Data
@@ -19,30 +20,33 @@ namespace TP.ConcurrentProgramming.Data
 
     public DataImplementation()
     {
-      MoveTimer = new Timer(Move, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(30));
+      MoveTimer = new Timer(Move, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(15));
     }
 
     #endregion ctor
 
     #region DataAbstractAPI
 
-    public override void Start(int numberOfBalls, Action<IVector, Double, IBall> upperLayerHandler)
+    public override async Task Start(int numberOfBalls, Action<IVector, Double, IBall> upperLayerHandler)
     {
       if (Disposed)
         throw new ObjectDisposedException(nameof(DataImplementation));
       if (upperLayerHandler == null)
         throw new ArgumentNullException(nameof(upperLayerHandler));
-      Random random = new Random();
-      for (int i = 0; i < numberOfBalls; i++)
+      await Task.Run(() =>
       {
-        Vector startingPosition = new(random.Next(100, 300), random.Next(100, 300));
-        Vector initialVelocity = new((random.NextDouble() - 0.5) * 50, (random.NextDouble() - 0.5) * 50);
-        double mass = random.NextDouble() * 10 + 10;
-        double radius = random.NextDouble() * 10 + 10;
-        Ball newBall = new(startingPosition, initialVelocity, radius, mass);
-        upperLayerHandler(startingPosition, radius, newBall);
-        BallsList.Add(newBall);
-      }
+          Random random = new Random();
+          for (int i = 0; i < numberOfBalls; i++)
+          {
+              Vector startingPosition = new(random.Next(100, 300), random.Next(100, 300));
+              Vector initialVelocity = new((random.NextDouble() - 0.5) * 75, (random.NextDouble() - 0.5) * 75);
+              double mass = random.NextDouble() * 10 + 10;
+              double radius = random.NextDouble() * 10 + 10;
+              Ball newBall = new(startingPosition, initialVelocity, radius, mass);
+              upperLayerHandler(startingPosition, radius, newBall);
+              BallsList.Add(newBall);
+          }
+      });
     }
 
     #endregion DataAbstractAPI
@@ -81,34 +85,40 @@ namespace TP.ConcurrentProgramming.Data
 
         private readonly Timer MoveTimer;
         private Random RandomGenerator = new();
-        private List<Ball> BallsList = [];
+        private ConcurrentBag<Ball> BallsList = new();
+        private readonly object lockObject = new();
         private void Move(object? state)
         {
-            DateTime now = DateTime.Now;
-            double deltaTime = (now - lastUpdateTime).TotalSeconds;
-            lastUpdateTime = now;
-
-            foreach (Ball ball in BallsList)
+            lock (lockObject)
             {
-                Vector scaledDelta = new Vector(
-                    ball.Velocity.x * deltaTime,
-                    ball.Velocity.y * deltaTime
-                );
+                DateTime now = DateTime.Now;
+                double deltaTime = (now - lastUpdateTime).TotalSeconds;
+                lastUpdateTime = now;
 
-                ball.Move(scaledDelta);
+                HandleBallCollisions();
+                foreach (Ball ball in BallsList)
+                {
+                    Vector scaledDelta = new Vector(
+                        ball.Velocity.x * deltaTime,
+                        ball.Velocity.y * deltaTime
+                    );
+
+                    ball.Move(scaledDelta);
+                }
+
             }
-
-            HandleBallCollisions();
         }
 
-        private void HandleBallCollisions() 
+        private void HandleBallCollisions()
         {
-            for (int i = 0; i < BallsList.Count; i++) 
+            var balls = BallsList.ToArray(); // Snapshot do pracy równoległej
+
+            Parallel.For(0, balls.Length, i =>
             {
-                for (int j = i + 1; j < BallsList.Count; j++)
+                Ball b1 = balls[i];
+                for (int j = i + 1; j < balls.Length; j++)
                 {
-                    Ball b1 = BallsList[i];
-                    Ball b2 = BallsList[j];
+                    Ball b2 = balls[j];
 
                     Vector pos1 = b1.Position;
                     Vector pos2 = b2.Position;
@@ -118,40 +128,45 @@ namespace TP.ConcurrentProgramming.Data
                     double distance = Math.Sqrt(dx * dx + dy * dy);
                     double minDistance = b1.Radius + b2.Radius;
 
-                    if (distance < minDistance && distance > 0) 
+                    if (distance < minDistance && distance > 0)
                     {
                         double nx = dx / distance;
                         double ny = dy / distance;
 
-                        double vx1 = b1.Velocity.x;
-                        double vy1 = b1.Velocity.y;
-                        double vx2 = b2.Velocity.x;
-                        double vy2 = b2.Velocity.y;
+                        IVector v1 = b1.Velocity;
+                        IVector v2 = b2.Velocity;
 
-                        double p = 2 * (vx1 * nx + vy1 * ny - vx2 * nx - vy2 * ny) /
-                                   (b1.Mass + b2.Mass);
+                        double p = 2 * (v1.x * nx + v1.y * ny - v2.x * nx - v2.y * ny) / (b1.Mass + b2.Mass);
 
-                        b1.Velocity = new Vector(
-                            vx1 - p * b2.Mass * nx,
-                            vy1 - p * b2.Mass * ny
+                        Vector newV1 = new Vector(
+                            v1.x - p * b2.Mass * nx,
+                            v1.y - p * b2.Mass * ny
                         );
 
-                        b2.Velocity = new Vector(
-                            vx2 + p * b1.Mass * nx,
-                            vy2 + p * b1.Mass * ny
+                        Vector newV2 = new Vector(
+                            v2.x + p * b1.Mass * nx,
+                            v2.y + p * b1.Mass * ny
                         );
 
+                        lock (b1) b1.Velocity = newV1;
+                        lock (b2) b2.Velocity = newV2;
+
+                        // Korekcja pozycji — przesuwamy w przeciwnych kierunkach
                         double overlap = minDistance - distance;
+                        double totalMass = b1.Mass + b2.Mass;
+                        double correctionB1Factor = b2.Mass / totalMass;
+                        double correctionB2Factor = b1.Mass / totalMass;
+
                         Vector correction = new Vector(nx * overlap, ny * overlap);
 
+                        lock (b1) b1.Position = new Vector(pos1.x - correction.x * correctionB1Factor, pos1.y - correction.y * correctionB1Factor);
+                        lock (b2) b2.Position = new Vector(pos2.x + correction.x * correctionB2Factor, pos2.y + correction.y * correctionB2Factor);
 
-                        b1.Position = new Vector(b1.Position.x - correction.x, b1.Position.y - correction.y);
-                        b2.Position = new Vector(b2.Position.x + correction.x, b2.Position.y + correction.y);
                     }
-
                 }
-            }
+            });
         }
+
 
         #endregion private
 
@@ -178,3 +193,4 @@ namespace TP.ConcurrentProgramming.Data
     #endregion TestingInfrastructure
   }
 }
+

@@ -23,9 +23,7 @@ namespace TP.ConcurrentProgramming.BusinessLogic
 
     #region Layer API
 
-    //public static readonly Dimensions GetDimensions = new(10.0, 10.0, 10.0);
-
-    public abstract void Start(int numberOfBalls, Action<IPosition, Double, IBall> upperLayerHandler);
+    public abstract Task Start(int numberOfBalls, Action<IPosition, Double, IBall> upperLayerHandler);
 
     #region IDisposable
 

@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections.ObjectModel;
+using System.Threading.Tasks;
 using TP.ConcurrentProgramming.Presentation.Model;
 using TP.ConcurrentProgramming.Presentation.ViewModel.MVVMLight;
 using ModelIBall = TP.ConcurrentProgramming.Presentation.Model.IBall;
@@ -28,19 +29,20 @@ namespace TP.ConcurrentProgramming.Presentation.ViewModel
       Observer = ModelLayer.Subscribe<ModelIBall>(x => Balls.Add(x));
     }
 
-    #endregion ctor
+        #endregion ctor
 
-    #region public API
+        #region public API
 
-    public void Start(int numberOfBalls)
-    {
-      if (Disposed)
-        throw new ObjectDisposedException(nameof(MainWindowViewModel));
-      ModelLayer.Start(numberOfBalls);
-      Observer.Dispose();
-    }
+        public async Task Start(int numberOfBalls)
+        {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(MainWindowViewModel));
+            await ModelLayer.Start(numberOfBalls);
+            Observer.Dispose(); // Nie jestem pewny, czy chcesz to tu robić – może to błąd!
+        }
 
-    public ObservableCollection<ModelIBall> Balls { get; } = new ObservableCollection<ModelIBall>();
+
+        public ObservableCollection<ModelIBall> Balls { get; } = new ObservableCollection<ModelIBall>();
 
     #endregion public API
 

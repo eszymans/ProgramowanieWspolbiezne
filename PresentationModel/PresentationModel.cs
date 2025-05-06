@@ -11,6 +11,9 @@ using System;
 using System.Diagnostics;
 using System.Reactive;
 using System.Reactive.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using static System.Net.Mime.MediaTypeNames;
 using UnderneathLayerAPI = TP.ConcurrentProgramming.BusinessLogic.BusinessLogicAbstractAPI;
 
 namespace TP.ConcurrentProgramming.Presentation.Model
@@ -44,16 +47,17 @@ namespace TP.ConcurrentProgramming.Presentation.Model
       return eventObservable.Subscribe(x => observer.OnNext(x.EventArgs.Ball), ex => observer.OnError(ex), () => observer.OnCompleted());
     }
 
-    public override void Start(int numberOfBalls)
-    {
-      layerBellow.Start(numberOfBalls, StartHandler);
-    }
+        public override async Task Start(int numberOfBalls)
+        {
+            await layerBellow.Start(numberOfBalls, StartHandler);
+        }
 
-    #endregion ModelAbstractApi
 
-    #region API
+        #endregion ModelAbstractApi
 
-    public event EventHandler<BallChaneEventArgs> BallChanged;
+        #region API
+
+        public event EventHandler<BallChaneEventArgs> BallChanged;
 
     #endregion API
 
@@ -62,18 +66,23 @@ namespace TP.ConcurrentProgramming.Presentation.Model
     private bool Disposed = false;
     private readonly IObservable<EventPattern<BallChaneEventArgs>> eventObservable = null;
     private readonly UnderneathLayerAPI layerBellow = null;
+    private readonly SynchronizationContext syncContext = SynchronizationContext.Current ?? new SynchronizationContext();
 
-    private void StartHandler(BusinessLogic.IPosition position, double radius, BusinessLogic.IBall ball)
-    {
-      ModelBall newBall = new ModelBall(position.x, position.y, ball) { Diameter = radius * 2 };
-      BallChanged.Invoke(this, new BallChaneEventArgs() { Ball = newBall });
-    }
+        private void StartHandler(BusinessLogic.IPosition position, double radius, BusinessLogic.IBall ball)
+        {
+          ModelBall newBall = new ModelBall(position.x, position.y, ball) { Diameter = radius * 2 };
+                syncContext.Post(_ =>
+                {
+                    BallChanged?.Invoke(this, new BallChaneEventArgs() { Ball = newBall });
+                 }, null);
 
-    #endregion private
+        }
 
-    #region TestingInfrastructure
+        #endregion private
 
-    [Conditional("DEBUG")]
+        #region TestingInfrastructure
+
+        [Conditional("DEBUG")]
     internal void CheckObjectDisposed(Action<bool> returnInstanceDisposed)
     {
       returnInstanceDisposed(Disposed);
