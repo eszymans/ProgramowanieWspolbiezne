@@ -38,7 +38,7 @@ namespace TP.ConcurrentProgramming.Presentation.ViewModel
             if (Disposed)
                 throw new ObjectDisposedException(nameof(MainWindowViewModel));
             await ModelLayer.Start(numberOfBalls);
-            Observer.Dispose(); // Nie jestem pewny, czy chcesz to tu robić – może to błąd!
+            Observer.Dispose();
         }
 
 

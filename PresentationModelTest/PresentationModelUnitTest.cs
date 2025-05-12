@@ -67,7 +67,7 @@ namespace TP.ConcurrentProgramming.Presentation.Model.Test
         Disposed = true;
       }
 
-      public override void Start(int numberOfBalls, Action<IPosition,Double, BusinessLogic.IBall> upperLayerHandler)
+      public override async Task Start(int numberOfBalls, Action<IPosition,Double, BusinessLogic.IBall> upperLayerHandler)
       {
         NumberOfBalls = numberOfBalls;
         Assert.IsNotNull(upperLayerHandler);

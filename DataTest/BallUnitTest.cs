@@ -52,13 +52,13 @@ namespace TP.ConcurrentProgramming.Data.Test
             ball.Move(initialVelocity);
 
             Assert.AreEqual(1, numberOfCallBackCalled);
-            Assert.AreEqual(369, curentPosition.x);
-            Assert.AreEqual(387, curentPosition.y);
+            Assert.AreEqual(379, curentPosition.x);
+            Assert.AreEqual(397, curentPosition.y);
 
             ball.Move(new Vector(-6.0, -6.0));
 
-            Assert.AreEqual(363, curentPosition.x);
-            Assert.AreEqual(381, curentPosition.y);
+            Assert.AreEqual(373, curentPosition.x);
+            Assert.AreEqual(391, curentPosition.y);
         }
     }
 }

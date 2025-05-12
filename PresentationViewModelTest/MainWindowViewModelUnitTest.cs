@@ -12,6 +12,7 @@ using System;
 using System.ComponentModel;
 using System.Reactive;
 using System.Reactive.Linq;
+using System.Threading.Tasks;
 using TP.ConcurrentProgramming.Presentation.Model;
 using ModelIBall = TP.ConcurrentProgramming.Presentation.Model.IBall;
 
@@ -75,7 +76,7 @@ namespace TP.ConcurrentProgramming.Presentation.ViewModel.Test
         Disposed++;
       }
 
-      public override void Start(int numberOfBalls)
+      public override async Task Start(int numberOfBalls)
       {
         Started = numberOfBalls;
       }
@@ -123,7 +124,7 @@ namespace TP.ConcurrentProgramming.Presentation.ViewModel.Test
         return eventObservable?.Subscribe(x => observer.OnNext(x.EventArgs.Ball), ex => observer.OnError(ex), () => observer.OnCompleted());
       }
 
-      public override void Start(int numberOfBalls)
+      public override async Task Start(int numberOfBalls)
       {
         for (int i = 0; i < numberOfBalls; i++)
         {

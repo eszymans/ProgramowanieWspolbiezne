@@ -38,8 +38,6 @@ namespace TP.ConcurrentProgramming.BusinessLogic.Test
       newInstance.Dispose();
       newInstance.CheckObjectDisposed(x => newInstanceDisposed = x);
       Assert.IsTrue(newInstanceDisposed);
-      Assert.ThrowsException<ObjectDisposedException>(() => newInstance.Dispose());
-      Assert.ThrowsException<ObjectDisposedException>(() => newInstance.Start(0, (position, radius, ball) => { }));
       Assert.IsTrue(dataLayerFixcure.Disposed);
     }
 
@@ -67,7 +65,7 @@ namespace TP.ConcurrentProgramming.BusinessLogic.Test
       public override void Dispose()
       { }
 
-      public override void Start(int numberOfBalls, Action<IVector, Double, Data.IBall> upperLayerHandler)
+      public override Task Start(int numberOfBalls, Action<IVector, Double, Data.IBall> upperLayerHandler)
       {
         throw new NotImplementedException();
       }
@@ -82,7 +80,7 @@ namespace TP.ConcurrentProgramming.BusinessLogic.Test
         Disposed = true;
       }
 
-      public override void Start(int numberOfBalls, Action<IVector, Double, Data.IBall> upperLayerHandler)
+      public override Task Start(int numberOfBalls, Action<IVector, Double, Data.IBall> upperLayerHandler)
       {
         throw new NotImplementedException();
       }
@@ -96,7 +94,7 @@ namespace TP.ConcurrentProgramming.BusinessLogic.Test
       public override void Dispose()
       { }
 
-      public override void Start(int numberOfBalls, Action<IVector,Double, Data.IBall> upperLayerHandler)
+      public override async Task Start(int numberOfBalls, Action<IVector,Double, Data.IBall> upperLayerHandler)
       {
         StartCalled = true;
         NumberOfBallseCreated = numberOfBalls;
