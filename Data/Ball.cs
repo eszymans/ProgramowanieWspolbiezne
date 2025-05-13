@@ -10,50 +10,51 @@
 
 namespace TP.ConcurrentProgramming.Data
 {
-  internal class Ball : IBall
-  {
-        internal double Radius { get; } = 12.0;
-        internal double Mass { get; } = 1.0;
-
-    #region ctor
-
-    internal Ball(Vector initialPosition, Vector initialVelocity)
+    internal class Ball : IBall
     {
-      Position = initialPosition;
-      Velocity = initialVelocity;
-    }
+        #region ctor
 
-    #endregion ctor
+        internal Ball(Vector initialPosition, Vector initialVelocity, double radius, double mass)
+        {
+            Position = initialPosition;
+            Velocity = initialVelocity;
+            Radius = radius;
+            Mass = mass;
+        }
 
-    #region IBall
+        #endregion ctor
 
-    public event EventHandler<IVector>? NewPositionNotification;
+        #region IBall
 
-    public IVector Velocity { get; set; }
+        public double Radius { get; set; }
+        public double Mass { get; set; }
+        public event EventHandler<IVector>? NewPositionNotification;
 
-    #endregion IBall
+        public IVector Velocity { get; set; }
 
-    #region private
+        #endregion IBall
 
-    protected internal Vector Position;
+        #region private
 
-    private void RaiseNewPositionChangeNotification()
-    {
-      NewPositionNotification?.Invoke(this, Position);
-    }
+        protected internal Vector Position;
+
+        private void RaiseNewPositionChangeNotification()
+        {
+            NewPositionNotification?.Invoke(this, Position);
+        }
 
         internal void Move(Vector delta)
         {
             double newX = Position.x + delta.x;
             double newY = Position.y + delta.y;
 
-            if (newX > 400 - Radius * 2 || newX < 0)
+            if (newX > 392 - Radius * 2 || newX < 0)
             {
                 delta = new Vector(-delta.x, delta.y);
                 Velocity = new Vector(-Velocity.x, Velocity.y);
             }
 
-            if (newY > 420 - Radius * 2 || newY < 0)
+            if (newY > 412 - Radius * 2 || newY < 0)
             {
                 delta = new Vector(delta.x, -delta.y);
                 Velocity = new Vector(Velocity.x, -Velocity.y);
@@ -63,6 +64,6 @@ namespace TP.ConcurrentProgramming.Data
             RaiseNewPositionChangeNotification();
         }
 
-    #endregion private
-}
+        #endregion private
+    }
 }

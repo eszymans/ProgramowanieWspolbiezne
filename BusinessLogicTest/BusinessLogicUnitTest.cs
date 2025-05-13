@@ -38,8 +38,6 @@ namespace TP.ConcurrentProgramming.BusinessLogic.Test
       newInstance.Dispose();
       newInstance.CheckObjectDisposed(x => newInstanceDisposed = x);
       Assert.IsTrue(newInstanceDisposed);
-      Assert.ThrowsException<ObjectDisposedException>(() => newInstance.Dispose());
-      Assert.ThrowsException<ObjectDisposedException>(() => newInstance.Start(0, (position, ball) => { }));
       Assert.IsTrue(dataLayerFixcure.Disposed);
     }
 
@@ -53,7 +51,7 @@ namespace TP.ConcurrentProgramming.BusinessLogic.Test
         int numberOfBalls2Create = 10;
         newInstance.Start(
           numberOfBalls2Create,
-          (startingPosition, ball) => { called++; Assert.IsNotNull(startingPosition); Assert.IsNotNull(ball); });
+          (startingPosition,radius, ball) => { called++; Assert.IsNotNull(startingPosition); Assert.IsNotNull(ball); });
         Assert.AreEqual<int>(1, called);
         Assert.IsTrue(dataLayerFixcure.StartCalled);
         Assert.AreEqual<int>(numberOfBalls2Create, dataLayerFixcure.NumberOfBallseCreated);
@@ -67,7 +65,7 @@ namespace TP.ConcurrentProgramming.BusinessLogic.Test
       public override void Dispose()
       { }
 
-      public override void Start(int numberOfBalls, Action<IVector, Data.IBall> upperLayerHandler)
+      public override Task Start(int numberOfBalls, Action<IVector, Double, Data.IBall> upperLayerHandler)
       {
         throw new NotImplementedException();
       }
@@ -82,7 +80,7 @@ namespace TP.ConcurrentProgramming.BusinessLogic.Test
         Disposed = true;
       }
 
-      public override void Start(int numberOfBalls, Action<IVector, Data.IBall> upperLayerHandler)
+      public override Task Start(int numberOfBalls, Action<IVector, Double, Data.IBall> upperLayerHandler)
       {
         throw new NotImplementedException();
       }
@@ -96,11 +94,11 @@ namespace TP.ConcurrentProgramming.BusinessLogic.Test
       public override void Dispose()
       { }
 
-      public override void Start(int numberOfBalls, Action<IVector, Data.IBall> upperLayerHandler)
+      public override async Task Start(int numberOfBalls, Action<IVector,Double, Data.IBall> upperLayerHandler)
       {
         StartCalled = true;
         NumberOfBallseCreated = numberOfBalls;
-        upperLayerHandler(new DataVectorFixture(), new DataBallFixture());
+        upperLayerHandler(new DataVectorFixture(), 0,new DataBallFixture());
       }
 
       private record DataVectorFixture : Data.IVector

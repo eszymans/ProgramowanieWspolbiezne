@@ -10,6 +10,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using System.Threading.Tasks;
 using TP.ConcurrentProgramming.Presentation.Model;
 using TP.ConcurrentProgramming.Presentation.ViewModel.MVVMLight;
 using ModelIBall = TP.ConcurrentProgramming.Presentation.Model.IBall;
@@ -24,6 +25,30 @@ namespace TP.ConcurrentProgramming.Presentation.ViewModel
         { }
 
         internal MainWindowViewModel(ModelAbstractApi modelLayerAPI)
+        #endregion ctor
+
+        #region public API
+
+        public async Task Start(int numberOfBalls)
+        {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(MainWindowViewModel));
+            await ModelLayer.Start(numberOfBalls);
+            Observer.Dispose();
+        }
+
+
+        public ObservableCollection<ModelIBall> Balls { get; } = new ObservableCollection<ModelIBall>();
+
+    #endregion public API
+
+    #region IDisposable
+
+    protected virtual void Dispose(bool disposing)
+    {
+      if (!Disposed)
+      {
+        if (disposing)
         {
             ModelLayer = modelLayerAPI == null ? ModelAbstractApi.CreateModel() : modelLayerAPI;
             StartCommand = new RelayCommand(StartSimulation, () => NumberOfBalls > 0);

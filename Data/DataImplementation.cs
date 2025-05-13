@@ -9,104 +9,122 @@
 //_____________________________________________________________________________________________________________________________________
 
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace TP.ConcurrentProgramming.Data
 {
-  internal class DataImplementation : DataAbstractAPI
-  {
-    #region ctor
-
-    public DataImplementation()
+    internal class DataImplementation : DataAbstractAPI
     {
-      MoveTimer = new Timer(Move, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(30));
-    }
+        #region ctor
 
-    #endregion ctor
-
-    #region DataAbstractAPI
-
-    public override void Start(int numberOfBalls, Action<IVector, IBall> upperLayerHandler)
-    {
-      if (Disposed)
-        throw new ObjectDisposedException(nameof(DataImplementation));
-      if (upperLayerHandler == null)
-        throw new ArgumentNullException(nameof(upperLayerHandler));
-      Random random = new Random();
-      for (int i = 0; i < numberOfBalls; i++)
-      {
-        Vector startingPosition = new(random.Next(100, 400 - 100), random.Next(100, 400 - 100));
-        Vector initialVelocity = new((random.NextDouble() - 0.5) * 50, (random.NextDouble() - 0.5) * 50);
-        Ball newBall = new(startingPosition, initialVelocity);
-        upperLayerHandler(startingPosition, newBall);
-        BallsList.Add(newBall);
-      }
-    }
-
-    #endregion DataAbstractAPI
-
-    #region IDisposable
-
-    protected virtual void Dispose(bool disposing)
-    {
-      if (!Disposed)
-      {
-        if (disposing)
+        public DataImplementation()
         {
-          MoveTimer.Dispose();
-          BallsList.Clear();
+            MoveTimer = new Timer(Move, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(15));
         }
-        Disposed = true;
-      }
-      else
-        throw new ObjectDisposedException(nameof(DataImplementation));
-    }
 
-    public override void Dispose()
-    {
-      // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-      Dispose(disposing: true);
-      GC.SuppressFinalize(this);
-    }
+        #endregion ctor
 
-    #endregion IDisposable
+        #region DataAbstractAPI
 
-    #region private
+        public override async Task Start(int numberOfBalls, Action<IVector, Double, IBall> upperLayerHandler)
+        {
+            if (Disposed)
+                throw new ObjectDisposedException(nameof(DataImplementation));
+            if (upperLayerHandler == null)
+                throw new ArgumentNullException(nameof(upperLayerHandler));
 
-    //private bool disposedValue;
+            await Task.Run(() =>
+            {
+                Random random = new Random();
+                for (int i = 0; i < numberOfBalls; i++)
+                {
+                    Vector startingPosition = new(random.Next(100, 300), random.Next(100, 300));
+                    Vector initialVelocity = new((random.NextDouble() - 0.5) * 75, (random.NextDouble() - 0.5) * 75);
+                    double mass = random.NextDouble() * 10 + 10;
+                    double radius = random.NextDouble() * 10 + 10;
+                    Ball newBall = new(startingPosition, initialVelocity, radius, mass);
+                    upperLayerHandler(startingPosition, radius, newBall);
+                    BallsList.Add(newBall);
+                }
+            });
+        }
+
+        #endregion DataAbstractAPI
+
+        #region IDisposable
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!Disposed)
+            {
+                if (disposing)
+                {
+                    MoveTimer.Dispose();
+                    BallsList.Clear();
+                }
+                Disposed = true;
+            }
+            else
+                throw new ObjectDisposedException(nameof(DataImplementation));
+        }
+
+        public override void Dispose()
+        {
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+
+        #endregion IDisposable
+
+        #region private
+
         private bool Disposed = false;
         private DateTime lastUpdateTime = DateTime.Now;
 
         private readonly Timer MoveTimer;
         private Random RandomGenerator = new();
-        private List<Ball> BallsList = [];
-        private void Move(object? state)
+        private ConcurrentBag<Ball> BallsList = new();
+        private readonly object lockObject = new();
+
+        private void MoveBall(Ball ball, double deltaTime)
         {
-            DateTime now = DateTime.Now;
-            double deltaTime = (now - lastUpdateTime).TotalSeconds;
-            lastUpdateTime = now;
+            Vector scaledDelta = new Vector(
+                ball.Velocity.x * deltaTime,
+                ball.Velocity.y * deltaTime
+            );
 
-            foreach (Ball ball in BallsList)
-            {
-                Vector scaledDelta = new Vector(
-                    ball.Velocity.x * deltaTime,
-                    ball.Velocity.y * deltaTime
-                );
-
-                ball.Move(scaledDelta);
-            }
-
-            HandleBallCollisions();
+            ball.Move(scaledDelta);
         }
 
-        private void HandleBallCollisions() 
+        private void Move(object? state)
         {
-            for (int i = 0; i < BallsList.Count; i++) 
+            lock (lockObject)
             {
-                for (int j = i + 1; j < BallsList.Count; j++)
+                DateTime now = DateTime.Now;
+                double deltaTime = (now - lastUpdateTime).TotalSeconds;
+                lastUpdateTime = now;
+
+                var moveTasks = BallsList.Select(ball => Task.Run(() => MoveBall(ball, deltaTime))).ToArray();
+
+                Task.WhenAll(moveTasks).Wait();
+
+                HandleBallCollisions();
+            }
+        }
+
+        private void HandleBallCollisions()
+        {
+            var balls = BallsList.ToArray();
+
+            Parallel.For(0, balls.Length, i =>
+            {
+                Ball b1 = balls[i];
+                for (int j = i + 1; j < balls.Length; j++)
                 {
-                    Ball b1 = BallsList[i];
-                    Ball b2 = BallsList[j];
+                    Ball b2 = balls[j];
 
                     Vector pos1 = b1.Position;
                     Vector pos2 = b2.Position;
@@ -114,41 +132,45 @@ namespace TP.ConcurrentProgramming.Data
                     double dx = pos2.x - pos1.x;
                     double dy = pos2.y - pos1.y;
                     double distance = Math.Sqrt(dx * dx + dy * dy);
-                    double minDistance = 2 * b1.Radius;
 
-                    if (distance < minDistance && distance > 0) 
+                    double minDistance = b1.Radius + b2.Radius;
+
+                    if (distance < minDistance && distance > 0)
                     {
                         double nx = dx / distance;
                         double ny = dy / distance;
 
-                        double vx1 = b1.Velocity.x;
-                        double vy1 = b1.Velocity.y;
-                        double vx2 = b2.Velocity.x;
-                        double vy2 = b2.Velocity.y;
+                        IVector v1 = b1.Velocity;
+                        IVector v2 = b2.Velocity;
 
-                        double p = 2 * (vx1 * nx + vy1 * ny - vx2 * nx - vy2 * ny) /
-                                   (b1.Mass + b2.Mass);
+                        double p = 2 * (v1.x * nx + v1.y * ny - v2.x * nx - v2.y * ny) / (b1.Mass + b2.Mass);
 
-                        b1.Velocity = new Vector(
-                            vx1 - p * b2.Mass * nx,
-                            vy1 - p * b2.Mass * ny
+                        Vector newV1 = new Vector(
+                            v1.x - p * b2.Mass * nx,
+                            v1.y - p * b2.Mass * ny
                         );
 
-                        b2.Velocity = new Vector(
-                            vx2 + p * b1.Mass * nx,
-                            vy2 + p * b1.Mass * ny
+                        Vector newV2 = new Vector(
+                            v2.x + p * b1.Mass * nx,
+                            v2.y + p * b1.Mass * ny
                         );
+
+                        lock (b1) b1.Velocity = newV1;
+                        lock (b2) b2.Velocity = newV2;
 
                         double overlap = minDistance - distance;
+                        double totalMass = b1.Mass + b2.Mass;
+
+                        double correctionB1Factor = b2.Mass / totalMass;
+                        double correctionB2Factor = b1.Mass / totalMass;
+
                         Vector correction = new Vector(nx * overlap, ny * overlap);
 
-
-                        b1.Position = new Vector(b1.Position.x - correction.x, b1.Position.y - correction.y);
-                        b2.Position = new Vector(b2.Position.x + correction.x, b2.Position.y + correction.y);
+                        lock (b1) b1.Position = new Vector(pos1.x - correction.x * correctionB1Factor, pos1.y - correction.y * correctionB1Factor);
+                        lock (b2) b2.Position = new Vector(pos2.x + correction.x * correctionB2Factor, pos2.y + correction.y * correctionB2Factor);
                     }
-
                 }
-            }
+            });
         }
 
         #endregion private
@@ -156,23 +178,23 @@ namespace TP.ConcurrentProgramming.Data
         #region TestingInfrastructure
 
         [Conditional("DEBUG")]
-    internal void CheckBallsList(Action<IEnumerable<IBall>> returnBallsList)
-    {
-      returnBallsList(BallsList);
-    }
+        internal void CheckBallsList(Action<IEnumerable<IBall>> returnBallsList)
+        {
+            returnBallsList(BallsList);
+        }
 
-    [Conditional("DEBUG")]
-    internal void CheckNumberOfBalls(Action<int> returnNumberOfBalls)
-    {
-      returnNumberOfBalls(BallsList.Count);
-    }
+        [Conditional("DEBUG")]
+        internal void CheckNumberOfBalls(Action<int> returnNumberOfBalls)
+        {
+            returnNumberOfBalls(BallsList.Count);
+        }
 
-    [Conditional("DEBUG")]
-    internal void CheckObjectDisposed(Action<bool> returnInstanceDisposed)
-    {
-      returnInstanceDisposed(Disposed);
-    }
+        [Conditional("DEBUG")]
+        internal void CheckObjectDisposed(Action<bool> returnInstanceDisposed)
+        {
+            returnInstanceDisposed(Disposed);
+        }
 
-    #endregion TestingInfrastructure
-  }
+        #endregion TestingInfrastructure
+    }
 }

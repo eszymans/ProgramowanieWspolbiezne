@@ -9,6 +9,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Threading.Tasks;
 
 namespace TP.ConcurrentProgramming.Presentation.Model
 {
@@ -26,11 +27,12 @@ namespace TP.ConcurrentProgramming.Presentation.Model
       return modelInstance.Value;
     }
 
-    public abstract void Start(int numberOfBalls);
+        public abstract Task Start(int numberOfBalls);
 
-    #region IObservable
 
-    public abstract IDisposable Subscribe(IObserver<IBall> observer);
+        #region IObservable
+
+        public abstract IDisposable Subscribe(IObserver<IBall> observer);
 
     #endregion IObservable
 

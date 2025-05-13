@@ -17,14 +17,14 @@ namespace TP.ConcurrentProgramming.Data.Test
     public void ConstructorTestMethod()
     {
       Vector testinVector = new Vector(0.0, 0.0);
-      Ball newInstance = new(testinVector, testinVector);
+      Ball newInstance = new(testinVector, testinVector, 5, 5);
     }
 
     [TestMethod]
     public void MoveTestMethod()
     {
       Vector initialPosition = new(10.0, 10.0);
-      Ball newInstance = new(initialPosition, new Vector(0.0, 0.0));
+      Ball newInstance = new(initialPosition, new Vector(0.0, 0.0), 5, 5);
       IVector curentPosition = new Vector(0.0, 0.0);
       int numberOfCallBackCalled = 0;
       newInstance.NewPositionNotification += (sender, position) => { Assert.IsNotNull(sender); curentPosition = position; numberOfCallBackCalled++; };
@@ -38,7 +38,7 @@ namespace TP.ConcurrentProgramming.Data.Test
         {
             Vector initialPosition = new Vector(374, 392);
             Vector initialVelocity = new Vector(5.0, 5.0);
-            Ball ball = new Ball(initialPosition, initialVelocity);
+            Ball ball = new Ball(initialPosition, initialVelocity, 5, 5);
 
             IVector curentPosition = new Vector(0.0, 0.0);
             int numberOfCallBackCalled = 0;
@@ -52,13 +52,13 @@ namespace TP.ConcurrentProgramming.Data.Test
             ball.Move(initialVelocity);
 
             Assert.AreEqual(1, numberOfCallBackCalled);
-            Assert.AreEqual(369, curentPosition.x);
-            Assert.AreEqual(387, curentPosition.y);
+            Assert.AreEqual(379, curentPosition.x);
+            Assert.AreEqual(397, curentPosition.y);
 
             ball.Move(new Vector(-6.0, -6.0));
 
-            Assert.AreEqual(363, curentPosition.x);
-            Assert.AreEqual(381, curentPosition.y);
+            Assert.AreEqual(373, curentPosition.x);
+            Assert.AreEqual(391, curentPosition.y);
         }
     }
 }
