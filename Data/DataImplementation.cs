@@ -116,5 +116,25 @@ namespace TP.ConcurrentProgramming.Data
         private ConcurrentDictionary<Ball, Thread> BallThreads = new();
 
         #endregion
+
+        #region Test
+#if DEBUG
+
+        public void CheckBallsList(Action<IEnumerable<Ball>> callback) {
+            callback?.Invoke(BallsList.ToArray());
+        }
+
+        public void CheckNumberOfBalls(Action<int> callback) {
+            callback?.Invoke(BallsList.Count);
+        }
+
+        public void CheckObjectDisposed(Action<bool> callback) {
+            callback?.Invoke(Disposed);
+        }
+
+#endif
+        #endregion
     }
 }
+
+

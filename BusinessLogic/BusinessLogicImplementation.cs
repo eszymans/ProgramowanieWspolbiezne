@@ -135,5 +135,14 @@ namespace TP.ConcurrentProgramming.BusinessLogic
         private List<IBall> logicBalls = new();
 
         #endregion
+
+        #region Test
+#if DEBUG
+
+        public void CheckObjectDisposed(Action<bool> callback) {
+            callback?.Invoke(Disposed);
+        }
+#endif
+        #endregion
     }
 }
