@@ -28,6 +28,7 @@ namespace TP.ConcurrentProgramming.Data
 
         public double Radius { get; set; }
         public double Mass { get; set; }
+        public IVector Position { get; set; }
         public event EventHandler<IVector>? NewPositionNotification;
 
         public IVector Velocity { get; set; }
@@ -36,8 +37,6 @@ namespace TP.ConcurrentProgramming.Data
 
         #region private
 
-        protected internal Vector Position;
-
         private void RaiseNewPositionChangeNotification()
         {
             NewPositionNotification?.Invoke(this, Position);
@@ -45,6 +44,7 @@ namespace TP.ConcurrentProgramming.Data
 
         internal void Move(Vector delta)
         {
+
             double newX = Position.x + delta.x;
             double newY = Position.y + delta.y;
 
