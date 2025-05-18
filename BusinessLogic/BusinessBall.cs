@@ -8,30 +8,64 @@
 //
 //_____________________________________________________________________________________________________________________________________
 
+using TP.ConcurrentProgramming.Data;
+
 namespace TP.ConcurrentProgramming.BusinessLogic
+// klasa pełna adapterów między Data a BusinessLogic
 {
-  internal class Ball : IBall
+  public class Vector : IVector
   {
-    public Ball(Data.IBall ball, double radius)
+    public double x { get; init; }
+    public double y { get; init; }
+
+    public Vector(double XComponent, double YComponent)
     {
-      ball.NewPositionNotification += RaisePositionChangeEvent;
-            Radius = radius;
+      x = XComponent;
+      y = YComponent;
     }
 
-    #region IBall
+    public static Vector operator +(Vector a, Vector b)
+    {
+      return new Vector(a.x + b.x, a.y + b.y);
+    }
+  }
+  internal class Ball : IBall
+  {
+    private readonly Data.IBall dataBall;
+
+    public Ball(Data.IBall ball, double radius)
+    {
+      dataBall = ball;
+      dataBall.NewPositionNotification += RaisePositionChangeEvent;
+      Radius = radius;
+    }
 
     public double Radius { get; set; }
+
+    public Vector Position
+    {
+      get => new Vector(dataBall.Position.x, dataBall.Position.y);
+      set => dataBall.Position = new Vector(value.x, value.y);
+    }
+
+    public Vector Velocity
+    {
+      get => new Vector(dataBall.Velocity.x, dataBall.Velocity.y);
+      set => dataBall.Velocity = new Vector(value.x, value.y);
+    }
+
+    public double Mass
+    {
+      get => dataBall.Mass;
+      set => dataBall.Mass = value;
+    }
+
     public event EventHandler<IPosition>? NewPositionNotification;
-
-    #endregion IBall
-
-    #region private
 
     private void RaisePositionChangeEvent(object? sender, Data.IVector e)
     {
       NewPositionNotification?.Invoke(this, new Position(e.x, e.y));
     }
-
-    #endregion private
   }
+
 }
