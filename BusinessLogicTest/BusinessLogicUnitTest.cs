@@ -69,7 +69,12 @@ namespace TP.ConcurrentProgramming.BusinessLogic.Test
       {
         throw new NotImplementedException();
       }
-    }
+
+            public override IEnumerable<Data.IBall> GetBalls()
+            {
+                throw new NotImplementedException();
+            }
+        }
 
     private class DataLayerDisposeFixcure : Data.DataAbstractAPI
     {
@@ -80,7 +85,12 @@ namespace TP.ConcurrentProgramming.BusinessLogic.Test
         Disposed = true;
       }
 
-      public override Task Start(int numberOfBalls, Action<IVector, Double, Data.IBall> upperLayerHandler)
+            public override IEnumerable<Data.IBall> GetBalls()
+            {
+                throw new NotImplementedException();
+            }
+
+            public override Task Start(int numberOfBalls, Action<IVector, Double, Data.IBall> upperLayerHandler)
       {
         throw new NotImplementedException();
       }
@@ -94,7 +104,12 @@ namespace TP.ConcurrentProgramming.BusinessLogic.Test
       public override void Dispose()
       { }
 
-      public override async Task Start(int numberOfBalls, Action<IVector,Double, Data.IBall> upperLayerHandler)
+            public override IEnumerable<Data.IBall> GetBalls()
+            {
+                throw new NotImplementedException();
+            }
+
+            public override async Task Start(int numberOfBalls, Action<IVector,Double, Data.IBall> upperLayerHandler)
       {
         StartCalled = true;
         NumberOfBallseCreated = numberOfBalls;
@@ -110,8 +125,11 @@ namespace TP.ConcurrentProgramming.BusinessLogic.Test
       private class DataBallFixture : Data.IBall
       {
         public IVector Velocity { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+                double Data.IBall.Mass { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+                double Data.IBall.Radius { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+                IVector Data.IBall.Position { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
-        public event EventHandler<IVector>? NewPositionNotification = null;
+                public event EventHandler<IVector>? NewPositionNotification = null;
       }
     }
 

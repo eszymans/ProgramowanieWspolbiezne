@@ -59,6 +59,9 @@ namespace TP.ConcurrentProgramming.BusinessLogic
   public interface IBall 
   {
     public double Radius { set; get; }
+    Vector Position { get; set; }
+    double Mass { get; set; }
+    Vector Velocity { get; set; }
     event EventHandler<IPosition> NewPositionNotification;
   }
 }

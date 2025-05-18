@@ -38,6 +38,8 @@ namespace TP.ConcurrentProgramming.Data
     private static Lazy<DataAbstractAPI> modelInstance = new Lazy<DataAbstractAPI>(() => new DataImplementation());
 
     #endregion private
+
+    public abstract IEnumerable<IBall> GetBalls();
   }
 
   public interface IVector
@@ -58,5 +60,8 @@ namespace TP.ConcurrentProgramming.Data
     event EventHandler<IVector> NewPositionNotification;
 
     IVector Velocity { get; set; }
+    double Mass { get; set; }
+    double Radius { get; set; }
+    IVector Position { get; set; }
   }
 }
