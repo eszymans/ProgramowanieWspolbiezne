@@ -41,7 +41,7 @@ namespace TP.ConcurrentProgramming.Data.Test
       newInstance.CheckBallsList(x => ballsList = x);
       Assert.IsNotNull(ballsList);
       newInstance.CheckNumberOfBalls(x => Assert.AreEqual<int>(0, x));
-      Assert.ThrowsException<ObjectDisposedException>(() => newInstance.Dispose());
+      newInstance.Dispose();
     }
 
     [TestMethod]

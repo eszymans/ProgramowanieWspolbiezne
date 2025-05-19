@@ -51,12 +51,7 @@ namespace TP.ConcurrentProgramming.Presentation.Model.Test
       public Vector Velocity { get; set; }
 
       public event EventHandler<IPosition>? NewPositionNotification;
-
-     public Vector Position { get; set; }
-     public double Mass { get; set; }
-    public Vector Velocity { get; set; }
       
-
       public void Dispose()
       {
         throw new NotImplementedException();
