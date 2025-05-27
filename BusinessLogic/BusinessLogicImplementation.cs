@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 using UnderneathLayerAPI = TP.ConcurrentProgramming.Data.DataAbstractAPI;
@@ -39,9 +40,11 @@ namespace TP.ConcurrentProgramming.BusinessLogic
                 var pos = new Position(start.x, start.y);
                 var logicBall = new Ball(dataBall, radius);
                 logicBalls.Add(logicBall);
+                // programowanie współbiezne : tworzenie wątków dla każdej kulki//
                 var thread = new Thread(() => BallThreadLoop(logicBall));
                 thread.Start();
                 ballThreads.Add(thread);
+                //-------------------------------------------------------------//
                 upperLayerHandler?.Invoke(pos, radius, logicBall);
             });
         }
@@ -51,19 +54,16 @@ namespace TP.ConcurrentProgramming.BusinessLogic
             DateTime lastUpdate = DateTime.Now;
             while (!Disposed)
             {
+                // Programowanie czasu rzeczywistego //
                 DateTime now = DateTime.Now;
                 double deltaTime = (now - lastUpdate).TotalSeconds;
                 lastUpdate = now;
 
-                Vector delta = new(ball.Velocity.x * deltaTime, ball.Velocity.y * deltaTime);
+                Vector delta = new(ball.Velocity.x * deltaTime, ball.Velocity.y * deltaTime); // wykorzystanie czasu rzeczywistego do obliczenia położenia
                 ball.Move(delta);
-                try
-                {
-                    CheckCollisionsForBall(ball);
-                }
-                catch (Exception ex)
-                {
-                }
+
+                // ----------------------------------//
+                CheckCollisionsForBall(ball);
                 Thread.Sleep(10);
             }
 
@@ -79,32 +79,68 @@ namespace TP.ConcurrentProgramming.BusinessLogic
 
         #region Collision Logic
 
+        private bool FindingCollisionTime(IBall ball, IBall ball2, double deltaTime)
+        {
+            Vector dp = new Vector(ball2.Position.x - ball.Position.x, ball2.Position.y - ball.Position.y);
+            Vector dv = new Vector(ball2.Velocity.x - ball.Velocity.x, ball2.Velocity.y - ball.Velocity.y);
+            double a = dv.x * dv.x + dv.y * dv.y;
+            double b = 2 * (dp.x * dv.x + dp.y * dv.y);
+            double c = dp.x * dp.x + dp.y * dp.y - (ball.Radius + ball2.Radius) * (ball.Radius + ball2.Radius);
+
+            double discriminant = b * b - 4 * a * c;
+            if (discriminant < 0)
+            {
+                // No collision
+                return;
+            }
+            double sqrtDiscriminant = Math.Sqrt(discriminant);
+            double t1 = (-b - sqrtDiscriminant) / (2 * a);
+            double t2 = (-b + sqrtDiscriminant) / (2 * a);
+            if (t1 < 0 && t2 < 0)
+            {
+                // Both collision times are in the past
+                return;
+            }
+            double collisionTime = Math.Min(t1 >= 0 ? t1 : double.MaxValue, t2 >= 0 ? t2 : double.MaxValue);
+            if (collisionTime < double.MaxValue)
+            {
+                collisionTime = t * deltaTime;
+                return true;
+            }
+            return;
+
+        }
+
         private void CheckCollisionsForBall(IBall ball)
         {
-        //    lock (_collisionLock)
-        //    {
+            lock (_collisionLock)
+            {
                 foreach (var otherBall in logicBalls)
                 {
                     if (otherBall != ball)
                     {
+                        var dx = otherBall.Position.x - ball.Position.x;
+                        var dy = otherBall.Position.y - ball.Position.y;
+                        var dist = Math.Sqrt(dx * dx + dy * dy);
+                        var minDist = ball.Radius + otherBall.Radius;
+                        if (dist < minDist || dist == 0)
+                        {
                             HandleCollision(ball, otherBall);
+                        }
                     }
                 }
-           // }
-
+            }
         }
 
         private void HandleCollision(IBall b1, IBall b2)
         {
-            //lock (b1)
-            //lock (b2)
-            {
+            lock (b1)
+                lock (b2)
+                {
                 var dx = b2.Position.x - b1.Position.x;
                 var dy = b2.Position.y - b1.Position.y;
                 var dist = Math.Sqrt(dx * dx + dy * dy);
                 var minDist = b1.Radius + b2.Radius;
-
-                if (dist >= minDist || dist == 0) return;
 
                 var nx = dx / dist;
                 var ny = dy / dist;
