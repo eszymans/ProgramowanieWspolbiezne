@@ -49,9 +49,9 @@ namespace TP.ConcurrentProgramming.Data
                     BallsList.Add(ball);
                     upperLayerHandler(start, radius, ball);
 
-                    Thread thread = new(() => BallThreadLoop(ball));
-                    BallThreads[ball] = thread;
-                    thread.Start();
+                    //Thread thread = new(() => BallThreadLoop(ball));
+                    //BallThreads[ball] = thread;
+                    //thread.Start();
                 }
             });
         }

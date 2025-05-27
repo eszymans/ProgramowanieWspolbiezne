@@ -8,6 +8,7 @@
 //
 //_____________________________________________________________________________________________________________________________________
 
+using System.Data.Common;
 using TP.ConcurrentProgramming.Data;
 
 namespace TP.ConcurrentProgramming.BusinessLogic
@@ -40,7 +41,13 @@ namespace TP.ConcurrentProgramming.BusinessLogic
       Radius = radius;
     }
 
-    public double Radius { get; set; }
+    public void Move(Vector delta)
+        {
+            dataBall.Move(new Data.Vector(delta.x, delta.y));
+            RaisePositionChangeEvent(this, dataBall.Position);
+        }
+
+        public double Radius { get; set; }
 
     public Vector Position
     {

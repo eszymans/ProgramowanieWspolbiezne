@@ -63,5 +63,6 @@ namespace TP.ConcurrentProgramming.Data
     double Mass { get; set; }
     double Radius { get; set; }
     IVector Position { get; set; }
+    void Move(Vector delta);
   }
 }

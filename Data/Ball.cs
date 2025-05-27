@@ -10,7 +10,7 @@
 
 namespace TP.ConcurrentProgramming.Data
 {
-    internal class Ball : IBall
+    public class Ball : IBall
     {
         #region ctor
 
@@ -42,7 +42,7 @@ namespace TP.ConcurrentProgramming.Data
             NewPositionNotification?.Invoke(this, Position);
         }
 
-        internal void Move(Vector delta)
+        public void Move(Vector delta)
         {
 
             double newX = Position.x + delta.x;

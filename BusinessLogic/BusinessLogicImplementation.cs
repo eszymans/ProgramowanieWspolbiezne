@@ -32,56 +32,72 @@ namespace TP.ConcurrentProgramming.BusinessLogic
                 throw new ObjectDisposedException(nameof(BusinessLogicImplementation));
 
             logicBalls = new List<IBall>();
+            ballThreads.Clear();
 
-            await layerBellow.Start(numberOfBalls, (start, radius, dataBall) =>
+           await layerBellow.Start(numberOfBalls, (start, radius, dataBall) =>
             {
                 var pos = new Position(start.x, start.y);
                 var logicBall = new Ball(dataBall, radius);
                 logicBalls.Add(logicBall);
-                upperLayerHandler(pos, radius, logicBall);
+                var thread = new Thread(() => BallThreadLoop(logicBall));
+                thread.Start();
+                ballThreads.Add(thread);
+                upperLayerHandler?.Invoke(pos, radius, logicBall);
             });
+        }
 
-            collisionThread = new Thread(CollisionLoop);
-            collisionThread.Start();
+        private void BallThreadLoop(Ball ball)
+        {
+            DateTime lastUpdate = DateTime.Now;
+            while (!Disposed)
+            {
+                DateTime now = DateTime.Now;
+                double deltaTime = (now - lastUpdate).TotalSeconds;
+                lastUpdate = now;
+
+                Vector delta = new(ball.Velocity.x * deltaTime, ball.Velocity.y * deltaTime);
+                ball.Move(delta);
+                try
+                {
+                    CheckCollisionsForBall(ball);
+                }
+                catch (Exception ex)
+                {
+                }
+                Thread.Sleep(10);
+            }
+
         }
 
         public override void Dispose()
         {
             if (Disposed)
                 throw new ObjectDisposedException(nameof(BusinessLogicImplementation));
-
-            stopCollisionThread = true;
-            collisionThread?.Join();
             layerBellow.Dispose();
             Disposed = true;
         }
 
         #region Collision Logic
 
-        private void CollisionLoop()
+        private void CheckCollisionsForBall(IBall ball)
         {
-            while (!stopCollisionThread)
-            {
-                var balls = logicBalls.ToArray(); // używamy tylko warstwy logiki
-
-                for (int i = 0; i < balls.Length; i++)
+        //    lock (_collisionLock)
+        //    {
+                foreach (var otherBall in logicBalls)
                 {
-                    for (int j = i + 1; j < balls.Length; j++)
+                    if (otherBall != ball)
                     {
-                        IBall b1 = balls[i];
-                        IBall b2 = balls[j];
-                        HandleCollision(b1, b2);
+                            HandleCollision(ball, otherBall);
                     }
                 }
+           // }
 
-                Thread.Sleep(15);
-            }
         }
 
         private void HandleCollision(IBall b1, IBall b2)
         {
-            lock (b1)
-            lock (b2)
+            //lock (b1)
+            //lock (b2)
             {
                 var dx = b2.Position.x - b1.Position.x;
                 var dy = b2.Position.y - b1.Position.y;
@@ -124,15 +140,16 @@ namespace TP.ConcurrentProgramming.BusinessLogic
             }
         }
 
+
         #endregion
 
         #region Private Fields
 
         private bool Disposed = false;
-        private volatile bool stopCollisionThread = false;
-        private Thread? collisionThread;
         private readonly UnderneathLayerAPI layerBellow;
         private List<IBall> logicBalls = new();
+        private readonly object _collisionLock = new object();
+        private readonly List<Thread> ballThreads = new();
 
         #endregion
 
