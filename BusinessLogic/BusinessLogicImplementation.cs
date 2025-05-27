@@ -8,6 +8,7 @@
 //
 //_____________________________________________________________________________________________________________________________________
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -32,7 +33,7 @@ namespace TP.ConcurrentProgramming.BusinessLogic
             if (Disposed)
                 throw new ObjectDisposedException(nameof(BusinessLogicImplementation));
 
-            logicBalls = new List<IBall>();
+            logicBalls = new ConcurrentBag<IBall>();
             ballThreads.Clear();
 
            await layerBellow.Start(numberOfBalls, (start, radius, dataBall) =>
@@ -78,39 +79,6 @@ namespace TP.ConcurrentProgramming.BusinessLogic
         }
 
         #region Collision Logic
-
-        private bool FindingCollisionTime(IBall ball, IBall ball2, double deltaTime)
-        {
-            Vector dp = new Vector(ball2.Position.x - ball.Position.x, ball2.Position.y - ball.Position.y);
-            Vector dv = new Vector(ball2.Velocity.x - ball.Velocity.x, ball2.Velocity.y - ball.Velocity.y);
-            double a = dv.x * dv.x + dv.y * dv.y;
-            double b = 2 * (dp.x * dv.x + dp.y * dv.y);
-            double c = dp.x * dp.x + dp.y * dp.y - (ball.Radius + ball2.Radius) * (ball.Radius + ball2.Radius);
-
-            double discriminant = b * b - 4 * a * c;
-            if (discriminant < 0)
-            {
-                // No collision
-                return;
-            }
-            double sqrtDiscriminant = Math.Sqrt(discriminant);
-            double t1 = (-b - sqrtDiscriminant) / (2 * a);
-            double t2 = (-b + sqrtDiscriminant) / (2 * a);
-            if (t1 < 0 && t2 < 0)
-            {
-                // Both collision times are in the past
-                return;
-            }
-            double collisionTime = Math.Min(t1 >= 0 ? t1 : double.MaxValue, t2 >= 0 ? t2 : double.MaxValue);
-            if (collisionTime < double.MaxValue)
-            {
-                collisionTime = t * deltaTime;
-                return true;
-            }
-            return;
-
-        }
-
         private void CheckCollisionsForBall(IBall ball)
         {
             lock (_collisionLock)
@@ -183,7 +151,7 @@ namespace TP.ConcurrentProgramming.BusinessLogic
 
         private bool Disposed = false;
         private readonly UnderneathLayerAPI layerBellow;
-        private List<IBall> logicBalls = new();
+        private ConcurrentBag<IBall> logicBalls = new();
         private readonly object _collisionLock = new object();
         private readonly List<Thread> ballThreads = new();
 

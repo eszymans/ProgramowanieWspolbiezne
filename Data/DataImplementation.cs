@@ -49,9 +49,6 @@ namespace TP.ConcurrentProgramming.Data
                     BallsList.Add(ball);
                     upperLayerHandler(start, radius, ball);
 
-                    //Thread thread = new(() => BallThreadLoop(ball));
-                    //BallThreads[ball] = thread;
-                    //thread.Start();
                 }
             });
         }
@@ -75,6 +72,7 @@ namespace TP.ConcurrentProgramming.Data
 
                     BallThreads.Clear();
                     BallsList.Clear();
+                    DiagnosticLogger.Stop();
                 }
                 Disposed = true;
             }
@@ -84,26 +82,6 @@ namespace TP.ConcurrentProgramming.Data
         {
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
-        }
-
-        #endregion
-
-        #region Movement
-
-        private void BallThreadLoop(Ball ball)
-        {
-            DateTime lastUpdate = DateTime.Now;
-            while (!stopThreads)
-            {
-                DateTime now = DateTime.Now;
-                double deltaTime = (now - lastUpdate).TotalSeconds;
-                lastUpdate = now;
-
-                Vector delta = new(ball.Velocity.x * deltaTime, ball.Velocity.y * deltaTime);
-                ball.Move(delta);
-
-                Thread.Sleep(10);
-            }
         }
 
         #endregion

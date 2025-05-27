@@ -61,6 +61,7 @@ namespace TP.ConcurrentProgramming.Data
             }
 
             Position = new Vector(Position.x + delta.x, Position.y + delta.y);
+            DiagnosticLogger.LogBallState(this);
             RaiseNewPositionChangeNotification();
         }
 
