@@ -130,7 +130,12 @@ namespace TP.ConcurrentProgramming.BusinessLogic.Test
                 IVector Data.IBall.Position { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
                 public event EventHandler<IVector>? NewPositionNotification = null;
-      }
+
+                void Data.IBall.Move(Data.Vector delta)
+                {
+                    throw new NotImplementedException();
+                }
+            }
     }
 
     #endregion testing instrumentation

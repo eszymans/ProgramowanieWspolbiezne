@@ -35,13 +35,21 @@ namespace TP.ConcurrentProgramming.BusinessLogic.Test
             
             public Data.IVector Position { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
+            Data.IVector Data.IBall.Position { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
             public event EventHandler<Data.IVector>? NewPositionNotification;
 
-      internal void Move()
-      {
-        NewPositionNotification?.Invoke(this, new VectorFixture(0.0, 0.0));
-      }
-    }
+            void Data.IBall.Move(Data.Vector delta)
+            {
+                throw new NotImplementedException();
+            }
+
+            public void Move()
+            {
+                NewPositionNotification?.Invoke(this, new VectorFixture(1, 1));
+            }
+
+        }
 
     private class VectorFixture : Data.IVector
     {
