@@ -51,6 +51,17 @@ namespace TP.ConcurrentProgramming.Data
 
                 }
             });
+
+            speedIncreaseTimer = new Timer(_ =>
+            {
+                lock (speedLock)
+                {
+                    foreach (var ball in BallsList)
+                    {
+                        ball.Velocity = new Vector(ball.Velocity.x * 1.01, ball.Velocity.y * 1.01);
+                    }
+                }
+            }, null, 2000, 2000);
         }
 
         public override IEnumerable<IBall> GetBalls() => BallsList.ToArray();
@@ -90,6 +101,8 @@ namespace TP.ConcurrentProgramming.Data
 
         private bool Disposed = false;
         private volatile bool stopThreads = false;
+        private Timer? speedIncreaseTimer;
+        private readonly object speedLock = new();
         private ConcurrentBag<Ball> BallsList = new();
         private ConcurrentDictionary<Ball, Thread> BallThreads = new();
 
